@@ -35,7 +35,23 @@ const { logger } = require("../config/config");
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function createBook() {}
+async function createBook(req, res, next) {
+  
+  const data = req.body;
+  console.log(data);
+
+  try {
+    const dbRes = await db.Book.create(data);
+
+    res.status(201).send({
+      succes: true,
+      data: dbRes,
+    });
+  } 
+  catch(err) {  
+    next(err);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -54,7 +70,19 @@ async function createBook() {}
  *
  * And call lean() and exec() on the query
  */
-async function getBooks() {}
+async function getBooks(req, res, next) {
+
+  try  {
+    const books = await db.Book.find().lean().exec();
+    res.status(200).send({
+      data:books
+    });
+
+  } catch(err) {
+    next(err)
+  }
+
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -88,7 +116,21 @@ async function getBooks() {}
  *
  * And call lean() and exec() on the query
  */
-async function getSingleBook() {}
+async function getSingleBook(req, res, next) {
+
+  const { bookId } = req.params;
+
+  try {
+    const book = await db.Book.findOne({ _id: bookId }, {title:1 , pages: 1})
+      .populate({path: "author", select: {firstName: 1, lastName: 1,},}).lean().exec();
+
+    res.status(200).send({
+      data: book,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -115,7 +157,27 @@ async function getSingleBook() {}
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function updateBook() {}
+async function updateBook(req, res, next) {
+  const { bookId } = req.params;
+  const { title, pages } = req.body;
+
+  try {
+    const book = await db.Book.findOneAndUpdate(
+      { _id: bookId },
+      {$set: {title: title, pages: pages}},
+      { new: true }, // sense això em modifica el llibre però em retorna el que hi havia abans encara que es guarda a la bbdd el nou valor
+      //no entenc com em pot tornar el valor antic que ja no existeix a la base de dades 
+    );
+
+    res.status(200).send({
+      data: book,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -135,7 +197,21 @@ async function updateBook() {}
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function deleteBook() {}
+async function deleteBook(req, res, next) {
+
+  const { bookId } = req.params;
+
+  try {
+    const book = await db.Book.findOneAndDelete({ _id: bookId });
+
+    res.status(200).send({
+      data: { _id: book._id },
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+}
 
 module.exports = {
   createBook: createBook,
